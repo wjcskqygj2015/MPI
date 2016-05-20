@@ -48,7 +48,7 @@ void LUResolveMPI(int n,float resolving[][maxN])
 
 //Then we need to Scatter the content of resolving
 	for(int i=0;i<n;i+=totalProcNum)
-		MPI::COMM_WORLD.Scatter(resolving+i, totalProcNum, array, resolving+i+nowProcID, totalProcNum, array, 0);
+		MPI::COMM_WORLD.Scatter(resolving+i, 1, array, resolving+i+nowProcID, 1, array, 0);
 
 //This time we just assume that ProcNum can completely divide the Scale, then we finished 
 
@@ -61,17 +61,17 @@ void LUResolveMPI(int n,float resolving[][maxN])
 			for(int i=nowRound+1;i<n;i++)
 				buffer[i]=(resolving[nowRound][i]/=resolving[nowRound][nowRound]);
 		//Then we use broadcast let this part to all	
-		MPI::COMM_WORLD.Bcast(buffer+nowRound+1,n-nowRound-1,MPI::FLOAT,master);
+		MPI::COMM_WORLD.Bcast(buffer+nowRound+1,n-nowRound-1,MPI::INT,master);
 		//Now we can use the buffer Number to be calculate the number
-		for(int row=nowRound+1+nowProcID;row<n;row+=totalProcNum)
+		for(int row=n-totalProcNum+nowProcID;row>=nowRound+1;row-=totalProcNum)
 			for(int column=nowRound+1;column<n;column++)
-				resolving[row][column]=resolving[row][column]-resolving[row][nowRound]*resolving[nowRound][column];
+				resolving[row][column]=resolving[row][column]-resolving[row][nowRound]*buffer[column];
 	}
 //We finished calculate process
 
 //Then we gather the whole matrix
 	for(int i=0;i<n;i+=totalProcNum)
-		MPI::COMM_WORLD.Gather(resolving+i+nowProcID,totalProcNum,array,resolving+i,totalProcNum,array,0);
+		MPI::COMM_WORLD.Gather(resolving+i+nowProcID,1,array,resolving+i,1,array,0);
 //We finish gathering matrix
 	array.Free();
 }
