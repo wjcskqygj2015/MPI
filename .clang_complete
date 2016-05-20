@@ -1,0 +1,2 @@
+-I/usr/include/mpi/
+-I/usr/include/openmpi/ompi/mpi/cxx/
